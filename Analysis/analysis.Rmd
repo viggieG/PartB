@@ -1,0 +1,131 @@
+```{r, message = FALSE, warning = FALSE}
+library(tidyr)
+library(ggplot2)
+library(dplyr)
+library(tibble)
+
+# construct three list to store the results
+pred1 <- 0
+pred2 <- 0
+pred3 <- 0
+
+source("~/Desktop/STAT 302/Projects/Proj 3/PartB/Code/my_rf_cv.R")
+
+# run each k thirty times and store
+for (i in 1 : 30) {
+  pred1 <- append(pred1, my_rf_cv(2))
+  pred2 <- append(pred2, my_rf_cv(5))
+  pred3 <- append(pred3, my_rf_cv(10))
+}
+
+# clean the 0 from the list
+pred1 <- pred1[-1]
+pred2 <- pred2[-1]
+pred3 <- pred3[-1]
+
+# create the number of simulations used in graphing
+ob1 <- rep(1 : 30, each = 2)
+ob2 <- rep(1 : 30, each = 5)
+ob3 <- rep(1 : 30, each = 10)
+
+# create each k's data frame
+k2 <- data_frame("observation" = ob1,
+                      "CV" = pred1)
+k5 <- data_frame("observation" = ob2,
+                      "CV" = pred2)
+k10 <- data_frame("observation" = ob3,
+                      "CV" = pred3)
+
+# draw the box plot for k = 2
+ggplot(data = k2, 
+       aes(x = observation, y = CV )) +
+  geom_boxplot(fill = "lightblue") +
+  theme_bw(base_size = 20) +
+  labs(title = "CV Estimated of K = 2", 
+       x = "Simulations", 
+       y = "MSE") +
+  theme(plot.title =
+          element_text(hjust = 0.5))
+
+ggsave("./Desktop/STAT 302/Projects/Proj 3/PartB/Output/Figures", filename = "fig1.png")
+
+# draw the box plot for k = 5
+ggplot(data = k5, 
+       aes(x = observation, y = CV )) +
+  geom_boxplot(fill = "lightblue") +
+  theme_bw(base_size = 20) +
+  labs(title = "CV Estimated of K = 5", 
+       x = "Simulations", 
+       y = "MSE") +
+  theme(plot.title =
+          element_text(hjust = 0.5))
+
+ggsave("./Desktop/STAT 302/Projects/Proj 3/PartB/Output/Figures", filename = "fig2.png")
+
+# draw the box plot for k = 10
+ggplot(data = k10, 
+       aes(x = observation, y = CV )) +
+  geom_boxplot(fill = "lightblue") +
+  theme_bw(base_size = 20) +
+  labs(title = "CV Estimated of K = 10", 
+       x = "Simulations", 
+       y = "MSE") +
+  theme(plot.title =
+          element_text(hjust = 0.5))
+
+ggsave("./Desktop/STAT 302/Projects/Proj 3/PartB/Output/Figures", filename = "fig3.png")
+
+# build a matrix to store the mean and std deviation
+mean_std <- matrix(c(mean(pred1), sd(pred1), mean(pred2), sd(pred2), mean(pred3), sd(pred3)),ncol = 2, nrow = 3)
+
+# classify the data meaning and k
+colnames(mean_std) <- c("Mean","Std dev")
+rownames(mean_std) <- c("k = 2", "k = 5", "k = 10")
+
+# save the results as rds
+saveRDS(mean_std, "mean_std.rds")
+
+# build lists to store the mean simulations
+k2_list <- 0
+k5_list <- 0
+k10_list <- 0
+
+# store 30 times simulations
+for (i in 1 : 30) {
+  k_2 <- k2 %>%
+    filter(observation == i)
+  k2_list <- append(k2_list, mean(k_2$CV))
+  k_5 <- k5 %>%
+    filter(observation == i)
+  k5_list <- append(k5_list, mean(k_5$CV))
+  k_10 <- k10 %>%
+    filter(observation == i)
+  k10_list <- append(k10_list, mean(k_10$CV))
+}
+
+# clean the 0 out of lists
+k2_list <- k2_list[-1]
+k5_list <- k5_list[-1]
+k10_list <- k10_list[-1]
+
+# build a frame for them 
+all_data <- data_frame("k2" = k2_list,
+                       "k5" = k5_list,
+                      "k10" = k10_list)
+
+# build a csv for simulations
+write_csv(all_data, "simulations.csv")
+```
+
+From the above boxplots and the table, we can clearly see that with increasing 
+k, the mean of MSE is decreasing, like k = 2 and k = 10. Also, with the 
+increasing k, the standard deviation is increasing. This situation is caused by
+the bias and variance tradeoff. With higher k, Our bias is decreasing because we 
+are training our model to be more specific to our training data. The variance is
+increasing because our model will be overfit, and will vary substantially with 
+new training data.
+
+The k = 5 shows different moves probably because its data has high dispersion 
+and lower number of extreme values. For it, it does show much lower mean and 
+extremely high standard deviation. However, if simply compare k = 5 to k = 2, it
+still follows the above rules: higher k, lower mean and higher standard deviation.
